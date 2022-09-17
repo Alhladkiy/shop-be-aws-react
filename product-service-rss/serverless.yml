@@ -8,6 +8,16 @@ provider:
   stage: dev
   region: eu-west-1
 
+custom: 
+  webpack: 
+    webpackConfig: 'webpack.config.js'
+    webpack includeModules: false
+    packager:  'npm'
+    excludeFiles: src/**/*.test.js
+
+plugins:
+  - serverless-webpack
+
 functions:
   getProductsList:
     handler: handler.getProductsList
