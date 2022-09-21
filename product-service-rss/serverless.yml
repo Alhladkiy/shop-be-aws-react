@@ -1,0 +1,35 @@
+service: product-service-rss
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: eu-west-1
+
+custom: 
+  webpack: 
+    webpackConfig: 'webpack.config.js'
+    webpack includeModules: false
+    packager:  'npm'
+    excludeFiles: src/**/*.test.js
+
+plugins:
+  - serverless-webpack
+
+functions:
+  getProductsList:
+    handler: handler.getProductsList
+    events:
+      - http:
+          path: /products
+          method: get
+          cors: true
+  getProductsById:
+    handler: handler.getProductsById
+    events:
+      - http:
+          path: /products/{productId}
+          method: get
+          cors: true
