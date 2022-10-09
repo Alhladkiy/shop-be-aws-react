@@ -1,0 +1,85 @@
+service: product-service-rss
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: eu-west-1
+  apiGateway:
+    minimumCompressionSize: 1024
+
+  environment:
+    TABLE_NAME:
+      Ref: ProductsWithDynamoDB
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ProductsWithDynamoDB, Arn]
+        - "Fn::GetAtt": [StocksWithDynamoDB, Arn]
+
+custom: 
+  webpack: 
+    webpackConfig: 'webpack.config.js'
+    webpack includeModules: false
+    packager:  'npm'
+    excludeFiles: src/**/*.test.js
+
+plugins:
+  - serverless-webpack
+
+functions:
+  getProductsList:
+    handler: handler.getProductsList
+    events:
+      - http:
+          path: /products
+          method: get
+          cors: true
+  getProductsById:
+    handler: handler.getProductsById
+    events:
+      - http:
+          path: /products/{productId}
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    ProductsWithDynamoDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ProductsWithDynamoDB
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    StocksWithDynamoDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: StocksWithDynamoDB
+        AttributeDefinitions:
+          - AttributeName: products_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: products_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
