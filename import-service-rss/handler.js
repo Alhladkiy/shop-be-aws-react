@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const csvParser = require('csv-parser');
-const { Readable } = require('stream');
+const sqs = new AWS.SQS();
 
 const BUCKET = 'uploaded-aleksei-hladki';
 
@@ -64,15 +64,26 @@ const importFileParser = async (event) => {
     for (const record of event.Records) {
       const key = record.s3.object.key;
 
-      const param = {
+      const params = {
         Bucket: BUCKET,
         Key: key,
       }
-      const s3Stream = s3.getObject(param).createReadStream();           
+      const s3Stream = s3.getObject(params).createReadStream(key);           
       await new Promise((resolve, reject) => {
           s3Stream
           .pipe(csvParser())
-          .on('data', (data) => res.push(data))
+          .on('data', (data) => 
+          sqs.sendMessage({
+            QueueUrl: process.env.SQS_URL,
+            MessageBody: data
+          }, () => console.log('message sent:', data)).promise())
+          callback(null, {
+            statusCode: 200,
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Credentials": true,
+            },
+          })
           .on('error', (error) => {
               reject(error);
           })

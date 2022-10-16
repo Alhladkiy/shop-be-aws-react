@@ -15,27 +15,31 @@ provider:
       Ref: ProductsWithDynamoDB
     SQS_URL:
       Ref: SQSQueue
+    SNS_ARN:
+      Ref: SNSTopic
 
   iamRoleStatements:
     - Effect: Allow
       Action: "sqs:*" 
       Resource:
         - Fn::GetAtt: [SQSQueue, Arn]
-
-    #       iamRoleStatements:
-    # - Effect: Allow
-    #   Action: 
-    #     - dynamodb:DescribeTable
-    #     - dynamodb:Query
-    #     - dynamodb:Scan
-    #     - dynamodb:GetItem
-    #     - dynamodb:PutItem
-    #     - dynamodb:UpdateItem
-    #     - dynamodb:DeleteItem
-    #   Resource:
-    #     - "Fn::GetAtt": [ProductsWithDynamoDB, Arn]
-    #     - "Fn::GetAtt": [StocksWithDynamoDB, Arn]
-
+    - Effect: "Allow"
+      Action:
+        - "sns:*"
+      Resource: 
+        Ref: SNSTopic
+    - Effect: Allow
+      Action: 
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ProductsWithDynamoDB, Arn]
+        - "Fn::GetAtt": [StocksWithDynamoDB, Arn]
 
 custom: 
   webpack: 
@@ -78,6 +82,17 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: catalogItemsQueue
+    SNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: createProductTopic
+    SNSSubscription: 
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: Alhladkiy@gmail.com
+        Protocol: email
+        TopicArn:
+          Ref: SNSTopic
 
     ProductsWithDynamoDB:
       Type: AWS::DynamoDB::Table
