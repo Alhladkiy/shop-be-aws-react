@@ -1,18 +1,49 @@
 'use strict';
 
-module.exports.hello = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: 'Go Serverless v1.0! Your function executed successfully!',
-        input: event,
-      },
-      null,
-      2
-    ),
-  };
+module.exports.basicAuthorizerRSS = async (event, context, callback) => {
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
+  if (event['type'] !== 'TOKEN' || (event.headers && !event.headers.Authorization)) {
+    callback('Unauthorized')
+  }
+
+  try {
+    const authorizationToken = event.authorizationToken || event.headers.Authorization;
+
+    const encodedCreds = authorizationToken.split(' ')[1];
+
+    const buff = Buffer.from(encodedCreds, 'base64');
+
+    const plainCreds = buff.toString('utf-8').split(':');
+    const userName = plainCreds[0];
+
+    const password = plainCreds[1];
+
+    const storedUserPassword = process.env['alhladkiy'];
+
+    const effect = !storedUserPassword || storedUserPassword !== password ? 'Allow' : 'Deny';
+
+    const policy = generatePolicy(encodedCreds, event.methodArn, effect);
+
+    callback(null, policy);
+
+  }
+  catch (err) {
+    callback(`Unauthorized: ${err.message}`)
+  }
 };
+
+const generatePolicy = (principalId, resource, effect = 'Allow') => {
+  return {
+    principalId: principalId,
+    policyDocument: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Action: 'execute-api:Invoke',
+          Effect: effect,
+          Resource: resource,
+        }
+      ]
+    }
+  };
+}  
