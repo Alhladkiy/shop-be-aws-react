@@ -1,6 +1,7 @@
 'use strict';
 
 module.exports.basicAuthorizerRSS = async (event, context, callback) => {
+  console.log("Event: ", JSON.stringify(event))
 
   if (event['type'] !== 'TOKEN' || (event.headers && !event.headers.Authorization)) {
     callback('Unauthorized')
@@ -17,8 +18,8 @@ module.exports.basicAuthorizerRSS = async (event, context, callback) => {
     const userName = plainCreds[0];
 
     const password = plainCreds[1];
-
-    const storedUserPassword = process.env['alhladkiy'];
+   
+    const storedUserPassword = process.env[userName];
 
     const effect = !storedUserPassword || storedUserPassword !== password ? 'Allow' : 'Deny';
 
